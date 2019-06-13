@@ -9,7 +9,7 @@ const config = {
   ]
 };
 
-const socket = io.connect("https://192.168.1.109:30443");
+const socket = io.connect("https://localhost:30443");
 const video = document.querySelector("video"); // eslint-disable-line no-unused-vars
 
 window.onunload = window.onbeforeunload = function() {
@@ -34,10 +34,32 @@ navigator.mediaDevices
   .catch(error => console.error(error));
 
 navigator.mediaDevices
-  .getDisplayMedia({ video: true, audio: true })
+  .getDisplayMedia({ video: true, audio: false })
   .then(stream => {
     ownStream = stream;
     socket.emit("broadcaster");
+
+    var mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+
+    console.log(mediaRecorder);
+
+    mediaRecorder.onerror = function(e) {
+      console.log(e);
+    };
+
+    mediaRecorder.onstart = function() {
+      console.log("started");
+    };
+
+    mediaRecorder.onstop = function() {
+      console.log("stoped");
+    };
+
+    mediaRecorder.ondataavailable = function(e) {
+      socket.emit("record", e.data);
+    };
+
+    mediaRecorder.start(1000);
   });
 
 socket.on("answer", function(id, description) {
